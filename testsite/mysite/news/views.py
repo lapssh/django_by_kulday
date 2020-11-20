@@ -2,10 +2,26 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.views.generic import ListView, DetailView, CreateView
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.paginator import Paginator
 
 from .models import News, Category
 from .forms import NewsForm
 from .utils import MyMixin
+
+def register(request):
+    return render(request, 'news/register.html')
+
+def login(request):
+    return render(request, 'news/login.html')
+
+def test(request):
+    objects = ['User1', 'User2', 'User3', 'User4', 'User5', 'User6', 'user7']
+    paginator = Paginator(objects, 2)
+    page_num = request.GET.get('page', 1)
+    page_objects = paginator.get_page(page_num)
+    # стиль пагинации описан в базовом шаблоне base.html
+    return render(request, 'news/test.html', {'page_obj': page_objects})
+
 
 class HomeNews(MyMixin, ListView):
     model = News
@@ -13,6 +29,7 @@ class HomeNews(MyMixin, ListView):
     context_object_name = 'news'
     mixin_prop = 'hello world'
     # extra_context = {'title': 'Главная '}
+    paginate_by = 2
 
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(**kwargs)
