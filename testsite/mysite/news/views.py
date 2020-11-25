@@ -1,22 +1,23 @@
-from django.shortcuts import render, get_object_or_404, redirect
-from django.urls import reverse_lazy
-from django.views.generic import ListView, DetailView, CreateView
+from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.paginator import Paginator
-from django.contrib import messages
+from django.shortcuts import render, redirect
+from django.views.generic import ListView, DetailView, CreateView
 
+from .forms import NewsForm, UserRegisterForm, UserLoginForm
 from .models import News, Category
-from .forms import NewsForm, UserRegisterForm
 from .utils import MyMixin
+from django.contrib.auth import login, logout
 
 
 def register(request):
     if request.method == 'POST':
         form = UserRegisterForm(request.POST)
         if form.is_valid():
-            form.save()
+            user = form.save()
+            login(request, user)
             messages.add_message(request, messages.INFO, 'Успешная регистрация')
-            return redirect('login')
+            return redirect('home')
         else:
             messages.error(request, 'Ошибка регистрации')
     else:
@@ -24,8 +25,21 @@ def register(request):
         messages.add_message(request, messages.INFO, 'Отказ!')
     return render(request, 'news/register.html', {'form': form})
 
-def login(request):
-    return render(request, 'news/login.html')
+
+def user_login(request):
+    if request.method == 'POST':
+        form = UserLoginForm(data = request.POST)
+        if form.is_valid():
+            user = form.get_user()
+            login(request, user)
+            return redirect('home')
+    else:
+        form = UserLoginForm()
+    return render(request, 'news/login.html', {'form': form})
+
+def user_logout(request):
+    logout(request)
+    return redirect('home')
 
 def test(request):
     objects = ['User1', 'User2', 'User3', 'User4', 'User5', 'User6', 'user7']
@@ -54,18 +68,21 @@ class HomeNews(MyMixin, ListView):
     def get_queryset(self):
         return News.objects.filter(is_published=True).select_related('category')
 
+
 class ViewNews(DetailView):
     model = News
     context_object_name = 'news_item'
     # template_name = 'news/new/news_detail.html'
     # pk_url_kwarg = 'news_id'
 
+
 class CreateNews(LoginRequiredMixin, CreateView):
     form_class = NewsForm
     template_name = 'news/add_news.html'
     # success_url = reverse_lazy('home')
-    login_url = '/admin/' # если не авторизован - на страницу регистрации
+    login_url = '/admin/'  # если не авторизован - на страницу регистрации
     # raise_exception = True # если не авторизован - ошибка 403
+
 
 # def index(request):
 #     news = News.objects.all()
@@ -93,7 +110,7 @@ class NewsByCategory(MyMixin, ListView):
         return context
 
     def get_queryset(self):
-        return News.objects.filter(category_id=self.kwargs['category_id'], is_published=True).\
+        return News.objects.filter(category_id=self.kwargs['category_id'], is_published=True). \
             select_related('category')
 
 # def view_news(request, news_id):
