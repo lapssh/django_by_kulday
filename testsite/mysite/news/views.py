@@ -1,14 +1,15 @@
+from django.conf.global_settings import EMAIL_HOST_USER
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.paginator import Paginator
 from django.shortcuts import render, redirect
 from django.views.generic import ListView, DetailView, CreateView
 
-from .forms import NewsForm, UserRegisterForm, UserLoginForm
+from .forms import NewsForm, UserRegisterForm, UserLoginForm, ContactForm
 from .models import News, Category
 from .utils import MyMixin
 from django.contrib.auth import login, logout
-
+from django.core.mail import send_mail
 
 def register(request):
     if request.method == 'POST':
@@ -42,12 +43,22 @@ def user_logout(request):
     return redirect('home')
 
 def test(request):
-    objects = ['User1', 'User2', 'User3', 'User4', 'User5', 'User6', 'user7']
-    paginator = Paginator(objects, 2)
-    page_num = request.GET.get('page', 1)
-    page_objects = paginator.get_page(page_num)
-    # стиль пагинации описан в базовом шаблоне base.html
-    return render(request, 'news/test.html', {'page_obj': page_objects})
+    if request.method == 'POST':
+        form = ContactForm(request.POST)
+        if form.is_valid():
+            print('тут норм')
+            print(EMAIL_HOST_USER)
+            mail = send_mail(form.cleaned_data['subject'], form.cleaned_data['content'],
+                      'yaipadko@gmail.com', ['lapnem@yandex.ru'], fail_silently=False)
+            print('а тут наверное нет')
+            if mail:
+                messages.error(request, 'Письмо отправлено!')
+                return redirect('test')
+            else:
+                messages.error(request, 'Ошибка отправки письма')
+    else:
+        form = ContactForm()
+    return render(request, 'news/test.html', {'form': form})
 
 
 class HomeNews(MyMixin, ListView):
