@@ -1,15 +1,15 @@
 from django.conf.global_settings import EMAIL_HOST_USER
 from django.contrib import messages
+from django.contrib.auth import login, logout
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.core.paginator import Paginator
+from django.core.mail import send_mail
 from django.shortcuts import render, redirect
 from django.views.generic import ListView, DetailView, CreateView
 
 from .forms import NewsForm, UserRegisterForm, UserLoginForm, ContactForm
 from .models import News, Category
 from .utils import MyMixin
-from django.contrib.auth import login, logout
-from django.core.mail import send_mail
+
 
 def register(request):
     if request.method == 'POST':
@@ -29,7 +29,7 @@ def register(request):
 
 def user_login(request):
     if request.method == 'POST':
-        form = UserLoginForm(data = request.POST)
+        form = UserLoginForm(data=request.POST)
         if form.is_valid():
             user = form.get_user()
             login(request, user)
@@ -38,22 +38,24 @@ def user_login(request):
         form = UserLoginForm()
     return render(request, 'news/login.html', {'form': form})
 
+
 def user_logout(request):
     logout(request)
     return redirect('home')
 
-def test(request):
+
+def contact(request):
     if request.method == 'POST':
         form = ContactForm(request.POST)
         if form.is_valid():
             print('тут норм')
             print(EMAIL_HOST_USER)
             mail = send_mail(form.cleaned_data['subject'], form.cleaned_data['content'],
-                      'yaipadko@gmail.com', ['lapnem@yandex.ru'], fail_silently=False)
+                             'yaipadko@gmail.com', ['lapnem@yandex.ru'], fail_silently=False)
             print('а тут наверное нет')
             if mail:
                 messages.error(request, 'Письмо отправлено!')
-                return redirect('test')
+                return redirect('contact')
             else:
                 messages.error(request, 'Ошибка отправки письма')
     else:
@@ -66,12 +68,10 @@ class HomeNews(MyMixin, ListView):
     template_name = 'news/home_news_list.html'
     context_object_name = 'news'
     mixin_prop = 'hello world'
-    # extra_context = {'title': 'Главная '}
     paginate_by = 2
 
     def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(**kwargs)
-        # context['title'] = 'Главная страница'
         context['title'] = self.get_upper('Главная страница')
         context['mixin_prop'] = self.get_prop()
         return context

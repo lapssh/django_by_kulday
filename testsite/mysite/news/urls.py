@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import path, include
 
 from news.views import *
 
@@ -6,7 +6,8 @@ urlpatterns = [
     path('register/', register, name='register'),
     path('login/', user_login, name='login'),
     path('logout/', user_logout, name='logout'),
-    path('test/', test, name='test'),
+    path('contact/', contact, name='contact'),
+    path('captcha/', include('captcha.urls')),
     # path('', index, name='home'),
     path('', HomeNews.as_view(), name='home'),
     # path('category/<int:category_id>', get_category, name='category'),
